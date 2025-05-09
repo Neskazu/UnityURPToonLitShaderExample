@@ -188,7 +188,9 @@ Shader "SimpleURPToonLitExample(With Outline)"
         [Header(Alpha Clipping)]
         [Toggle(_UseAlphaClipping)]_UseAlphaClipping("Enable?", Float) = 0
         _Cutoff("    Cutoff", Range(0.0, 1.0)) = 0.5
-
+        [Header(Metallic)]
+        [Range(0,1)]_Metallic("Metallic", Range(0,1)) = 0.0
+        [NoScaleOffset]_MetallicGlossMap("Metallic Gloss Map", 2D) = "white" {}
         [Header(Emission)]
         [Toggle]_UseEmission("Enable?", Float) = 0
         [HDR] _EmissionColor("    Color", Color) = (0,0,0)
@@ -203,7 +205,7 @@ Shader "SimpleURPToonLitExample(With Outline)"
         _OcclusionMapChannelMask("        ChannelMask", Vector) = (1,0,0,0)
         _OcclusionRemapStart("        RemapStart", Range(0,1)) = 0
         _OcclusionRemapEnd("        RemapEnd", Range(0,1)) = 1
-
+        
         [Header(Indirect Light)]
         _IndirectLightMinColor("Min Color", Color) = (0.1,0.1,0.1,1) // can prevent completely black if light prob is not baked
         _IndirectLightMultiplier("Multiplier", Range(0,1)) = 1
@@ -231,6 +233,7 @@ Shader "SimpleURPToonLitExample(With Outline)"
         [NoScaleOffset]_OutlineZOffsetMaskTex("    Mask (black is apply ZOffset)", 2D) = "black" {}
         _OutlineZOffsetMaskRemapStart("    RemapStart", Range(0,1)) = 0
         _OutlineZOffsetMaskRemapEnd("    RemapEnd", Range(0,1)) = 1
+        
     }
     SubShader
     {       
@@ -299,6 +302,11 @@ Shader "SimpleURPToonLitExample(With Outline)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS   // классический Forward  
+            #pragma multi_compile _ _FORWARD_PLUS        // Forward+ (кластерный обход)  
+
+
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
 
             // -------------------------------------
             // Shader Stages
@@ -399,7 +407,12 @@ Shader "SimpleURPToonLitExample(With Outline)"
 
             HLSLPROGRAM
             #pragma target 2.0
-            
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS   // классический Forward  
+            #pragma multi_compile _ _FORWARD_PLUS        // Forward+ (кластерный обход)  
+
+
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+
             // -------------------------------------
             // Shader Stages
             #pragma vertex VertexShaderWork
@@ -475,6 +488,11 @@ Shader "SimpleURPToonLitExample(With Outline)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS   // классический Forward  
+            #pragma multi_compile _ _FORWARD_PLUS        // Forward+ (кластерный обход)  
+
+
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
 
             // -------------------------------------
             // Shader Stages
@@ -533,6 +551,11 @@ Shader "SimpleURPToonLitExample(With Outline)"
             
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS   // классический Forward  
+            #pragma multi_compile _ _FORWARD_PLUS        // Forward+ (кластерный обход)  
+
+
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
 
             // -------------------------------------
             // Shader Stages
@@ -587,6 +610,11 @@ Shader "SimpleURPToonLitExample(With Outline)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS   // классический Forward  
+            #pragma multi_compile _ _FORWARD_PLUS        // Forward+ (кластерный обход)  
+
+
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
 
             // -------------------------------------
             // Shader Stages

@@ -55,7 +55,7 @@ half3 ShadeSingleLight(ToonSurfaceData surfaceData, ToonLightingData lightingDat
 
     // saturate() light.color to prevent over bright
     // additional light reduce intensity since it is additive
-    return saturate(light.color) * lightAttenuationRGB * (isAdditionalLight ? 0.25 : 1);
+    return saturate(light.color) * lightAttenuationRGB * (isAdditionalLight ? 0.55 : 1);
 }
 
 half3 ShadeEmission(ToonSurfaceData surfaceData, ToonLightingData lightingData)
@@ -64,11 +64,39 @@ half3 ShadeEmission(ToonSurfaceData surfaceData, ToonLightingData lightingData)
     return emissionResult;
 }
 
-half3 CompositeAllLightResults(half3 indirectResult, half3 mainLightResult, half3 additionalLightSumResult, half3 emissionResult, ToonSurfaceData surfaceData, ToonLightingData lightingData)
+half3 CompositeAllLightResults(half3 indirectResult, half3 mainLightResult, half3 additionalLightSumResult,
+                              half3 emissionResult, ToonSurfaceData surfaceData, ToonLightingData lightingData)
 {
-    // [remember you can write anything here, this is just a simple tutorial method]
-    // here we prevent light over bright,
-    // while still want to preserve light color's hue
-    half3 rawLightSum = max(indirectResult, mainLightResult + additionalLightSumResult); // pick the highest between indirect and direct light
-    return surfaceData.albedo * rawLightSum + emissionResult;
+    half3 rawLightSum = max(indirectResult, mainLightResult + additionalLightSumResult);
+    half3 diff_orig = surfaceData.albedo * rawLightSum;
+    half3 N = lightingData.normalWS;
+    half3 V = lightingData.viewDirectionWS;
+    half3 L = _LightDirection;
+    half3 H = normalize(L + V);
+    half NoL = saturate(dot(N, L));
+    half NoH = saturate(dot(N, H));
+    half3 F0 = lerp(0.04, surfaceData.albedo, surfaceData.metallic);
+    half shininess = surfaceData.smoothness * 127 + 1;
+    half3 spec_orig = F0 * pow(NoH, shininess) * NoL;
+    half3 origResult = diff_orig + spec_orig + emissionResult;
+    if (surfaceData.metallic <= 0.0)
+        return origResult;
+
+    half lum = dot(surfaceData.albedo, half3(0.3, 0.6, 0.1));
+    float lightLum = max(rawLightSum.x, max(rawLightSum.y, rawLightSum.z));
+    float diffRamp = smoothstep(0.1, 0.25, lum * lightLum) + step(0.5, lum * lightLum) * 2.0;
+    half3 diff_toon = surfaceData.albedo * (diffRamp / 3.0);
+    float ramp = smoothstep(0.6, 0.8, NoH) + smoothstep(0.8, 0.95, NoH) * 4.0;
+    ramp = saturate(ramp / 3.0);
+    half3 spec_toon = F0 * ramp * NoL;
+    float fEdge = pow(1.0 - saturate(dot(N, V)), 2.0);
+    spec_toon += F0 * fEdge * 0.5;
+    float rim = pow(saturate(1.0 - dot(N, V)), 3.0);
+    diff_toon += surfaceData.albedo * rim * 0.2;
+
+    half3 toonResult = diff_toon + spec_toon + emissionResult;
+
+    half m = saturate(surfaceData.metallic);
+    return lerp(origResult, toonResult, m);
 }
+
